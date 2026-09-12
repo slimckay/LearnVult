@@ -6,6 +6,7 @@ import Library from "./pages/Library.jsx";
 import Upload from "./pages/Upload.jsx";
 import Offline from "./pages/Offline.jsx";
 import SyncStatus from "./pages/SyncStatus.jsx";
+import { flushUploadQueue } from "./offline/syncQueue.js";
 
 function readUser() {
   const raw = localStorage.getItem("lv_user");
@@ -14,8 +15,14 @@ function readUser() {
 
 function Layout({ user, onLogout, children }) {
   const [online, setOnline] = useState(navigator.onLine);
+
   useEffect(() => {
-    const on = () => setOnline(true);
+    const on = async () => {
+      setOnline(true);
+      if (localStorage.getItem("lv_token")) {
+        try { await flushUploadQueue(); } catch {}
+      }
+    };
     const off = () => setOnline(false);
     window.addEventListener("online", on);
     window.addEventListener("offline", off);
@@ -24,12 +31,13 @@ function Layout({ user, onLogout, children }) {
       window.removeEventListener("offline", off);
     };
   }, []);
+
   return (
     <div className="shell">
       <header className="topbar">
         <div className="brand">LearnVult<small>Offline learning resources for Sierra Leone</small></div>
         <nav>
-          {!online && <span className="offline-pill">Offline</span>}
+          <span className="offline-pill">{online ? "Online" : "Offline"}</span>
           {user ? (
             <>
               <NavLink to="/library">Library</NavLink>
