@@ -1,0 +1,27 @@
+:root { --bg:#f3efe6; --ink:#14241c; --muted:#5b6b62; --green:#0f3d2e; --green-2:#1d6b4f; --gold:#d4a017; --card:#fffdf8; --line:#ddd4c4; --danger:#9b2c2c; }
+* { box-sizing: border-box; }
+html, body, #root { margin: 0; min-height: 100%; }
+body { font-family: Georgia, "Times New Roman", serif; background: radial-gradient(circle at top left, #e7f0e8, var(--bg) 45%); color: var(--ink); }
+a { color: var(--green-2); }
+button, input, select, textarea { font: inherit; }
+.shell { max-width: 960px; margin: 0 auto; padding: 24px 16px 64px; }
+.topbar { display:flex; justify-content:space-between; gap:16px; align-items:center; padding:16px 0 28px; }
+.brand { font-weight:700; font-size:1.4rem; }
+.brand small { display:block; color:var(--muted); font-size:0.75rem; font-weight:400; }
+nav { display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
+nav a { text-decoration:none; color:var(--ink); }
+nav a.active { border-bottom:2px solid var(--gold); }
+.card { background:var(--card); border:1px solid var(--line); border-radius:16px; padding:20px; box-shadow:0 8px 24px rgba(20,36,28,0.06); }
+label { display:block; margin:0 0 6px; }
+input, select, textarea { width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:10px; background:#fff; margin-bottom:14px; }
+.btn { border:0; background:var(--green); color:#fff; padding:10px 16px; border-radius:999px; cursor:pointer; }
+.btn.secondary { background:#fff; color:var(--green); border:1px solid var(--green); }
+.btn.ghost { background:transparent; color:var(--ink); }
+.row { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+.banner { padding:10px 12px; border-radius:10px; margin-bottom:16px; background:#e8f4ee; }
+.banner.error { background:#fde8e8; color:var(--danger); }
+.offline-pill { font-size:0.8rem; background:var(--gold); color:#111; padding:4px 8px; border-radius:999px; }
+.resource { display:flex; justify-content:space-between; gap:12px; align-items:flex-start; padding:14px 0; border-bottom:1px solid var(--line); }
+.resource:last-child { border-bottom:0; }
+.meta { color:var(--muted); font-size:0.9rem; }
+h1 { margin-top:0; }
