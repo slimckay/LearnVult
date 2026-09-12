@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+*.db
+*.sqlite3
+
+# Node
+frontend/node_modules/
+frontend/dist/
+
+# Uploads and local data
+backend/storage/uploads/*
+!backend/storage/uploads/.gitkeep
+backend/learnvult.db
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+.idea/
+
+# Logs
+*.log
