@@ -1,6 +1,6 @@
 # LearnVult
 
-Offline-first educational resource sharing for secondary schools in low-connectivity areas in Sierra Leone.
+Offline educational resource sharing for secondary schools in low-connectivity areas in Sierra Leone.
 
 Teachers upload and organise notes, past papers, and other materials. Students browse, download, and keep using those files when the internet drops. When a connection returns, the app syncs in the background.
 
