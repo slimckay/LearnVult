@@ -6,6 +6,7 @@ import Library from "./pages/Library.jsx";
 import Upload from "./pages/Upload.jsx";
 import Offline from "./pages/Offline.jsx";
 import SyncStatus from "./pages/SyncStatus.jsx";
+import Splash from "./components/Splash.jsx";
 import { flushUploadQueue } from "./offline/syncQueue.js";
 
 function readUser() {
@@ -35,15 +36,26 @@ function Layout({ user, onLogout, children }) {
   return (
     <div className="shell">
       <header className="topbar">
-        <div className="brand">LearnVult<small>Offline learning resources for Sierra Leone</small></div>
+        <div className="brand">
+          <div className="logo-mark">LV</div>
+          <div>
+            <div className="brand-name">LearnVult</div>
+            <small>Secondary school resources · Sierra Leone</small>
+          </div>
+        </div>
         <nav>
-          <span className="offline-pill">{online ? "Online" : "Offline"}</span>
+          <span className={`offline-pill ${online ? "" : "is-off"}`}>
+            {online ? "Online" : "Offline"}
+          </span>
           {user ? (
             <>
+              <span className="user-chip">{user.full_name.split(" ")[0]} · {user.role}</span>
               <NavLink to="/library">Library</NavLink>
               <NavLink to="/offline">Offline</NavLink>
               <NavLink to="/sync">Sync</NavLink>
-              {(user.role === "teacher" || user.role === "admin") && <NavLink to="/upload">Upload</NavLink>}
+              {(user.role === "teacher" || user.role === "admin") && (
+                <NavLink to="/upload">Upload</NavLink>
+              )}
               <button className="btn ghost" onClick={onLogout}>Log out</button>
             </>
           ) : (
@@ -61,19 +73,34 @@ function Layout({ user, onLogout, children }) {
 
 export default function App() {
   const [user, setUser] = useState(readUser);
+  const [showSplash, setShowSplash] = useState(() => !sessionStorage.getItem("lv_splash"));
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!showSplash) return;
+    const timer = setTimeout(() => {
+      sessionStorage.setItem("lv_splash", "1");
+      setShowSplash(false);
+    }, 2200);
+    return () => clearTimeout(timer);
+  }, [showSplash]);
+
   function handleAuth(data) {
     localStorage.setItem("lv_token", data.access_token);
     localStorage.setItem("lv_user", JSON.stringify(data.user));
     setUser(data.user);
     navigate("/library");
   }
+
   function logout() {
     localStorage.removeItem("lv_token");
     localStorage.removeItem("lv_user");
     setUser(null);
     navigate("/login");
   }
+
+  if (showSplash) return <Splash />;
+
   return (
     <Layout user={user} onLogout={logout}>
       <Routes>
