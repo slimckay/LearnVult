@@ -6,17 +6,24 @@ from app.models.user import User
 from app.schemas.user import TokenOut, UserCreate, UserLogin, UserOut
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
-ALLOWED_ROLES = {"student", "teacher", "admin"}
+ALLOWED_ROLES = {"student", "teacher"}
 
 @router.post("/register", response_model=TokenOut)
 def register(payload: UserCreate, db: Session = Depends(get_db)):
     role = payload.role.lower()
     if role not in ALLOWED_ROLES:
-        raise HTTPException(status_code=400, detail="Role must be student, teacher, or admin")
+        raise HTTPException(status_code=400, detail="Role must be student or teacher")
     existing = db.query(User).filter(User.email == payload.email.lower()).first()
     if existing:
         raise HTTPException(status_code=400, detail="Email already registered")
-    user = User(full_name=payload.full_name.strip(), email=payload.email.lower(), hashed_password=hash_password(payload.password), role=role, school_name=payload.school_name)
+    user = User(
+        full_name=payload.full_name.strip(),
+        email=payload.email.lower(),
+        hashed_password=hash_password(payload.password),
+        role=role,
+        school_name=payload.school_name,
+        is_verified=(role != "teacher"),
+    )
     db.add(user)
     db.commit()
     db.refresh(user)
