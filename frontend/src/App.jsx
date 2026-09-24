@@ -6,6 +6,7 @@ import Library from "./pages/Library.jsx";
 import Upload from "./pages/Upload.jsx";
 import Offline from "./pages/Offline.jsx";
 import SyncStatus from "./pages/SyncStatus.jsx";
+import Admin from "./pages/Admin.jsx";
 import Splash from "./components/Splash.jsx";
 import { flushUploadQueue } from "./offline/syncQueue.js";
 
@@ -56,6 +57,7 @@ function Layout({ user, onLogout, children }) {
               {(user.role === "teacher" || user.role === "admin") && (
                 <NavLink to="/upload">Upload</NavLink>
               )}
+              {user.role === "admin" && <NavLink to="/admin">Admin</NavLink>}
               <button className="btn ghost" onClick={onLogout}>Log out</button>
             </>
           ) : (
@@ -89,7 +91,7 @@ export default function App() {
     localStorage.setItem("lv_token", data.access_token);
     localStorage.setItem("lv_user", JSON.stringify(data.user));
     setUser(data.user);
-    navigate("/library");
+    navigate(data.user.role === "admin" ? "/admin" : "/library");
   }
 
   function logout() {
@@ -111,6 +113,7 @@ export default function App() {
         <Route path="/upload" element={user ? <Upload /> : <Navigate to="/login" />} />
         <Route path="/offline" element={<Offline />} />
         <Route path="/sync" element={user ? <SyncStatus /> : <Navigate to="/login" />} />
+        <Route path="/admin" element={user && user.role === "admin" ? <Admin /> : <Navigate to="/login" />} />
       </Routes>
     </Layout>
   );
