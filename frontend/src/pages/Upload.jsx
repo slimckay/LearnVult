@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { uploadResource } from "../api.js";
+import { CLASS_LEVELS, EXAM_YEARS, RESOURCE_TYPES, SUBJECTS } from "../catalog.js";
 import { queueUpload } from "../offline/db.js";
 import { isNetworkError } from "../offline/syncQueue.js";
 
@@ -7,6 +8,7 @@ export default function Upload() {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
+  const [kind, setKind] = useState("notes");
 
   async function submit(event) {
     event.preventDefault();
@@ -20,6 +22,7 @@ export default function Upload() {
       const created = await uploadResource(form);
       setMessage(`Uploaded "${created.title}" to the school library.`);
       formEl.reset();
+      setKind("notes");
     } catch (err) {
       if (isNetworkError(err) && file) {
         await queueUpload({
@@ -34,6 +37,7 @@ export default function Upload() {
         });
         setMessage(`"${form.get("title")}" is saved on this device and will upload when the internet returns. Open Sync to send it.`);
         formEl.reset();
+        setKind("notes");
       } else {
         setError(err.message);
       }
@@ -43,30 +47,48 @@ export default function Upload() {
   }
 
   return (
-    <div className="card" style={{ maxWidth: 560 }}>
+    <div className="card" style={{ maxWidth: 640 }}>
       <span className="kicker">Teachers</span>
       <h1>Add a class resource</h1>
-      <p className="meta page-intro">Notes, past papers, or assignments. If there is no internet, the file waits in Sync.</p>
+      <p className="meta page-intro">
+        Organise the file by subject, class, type and year so students can filter the library later.
+      </p>
       {error && <div className="banner error">{error}</div>}
       {message && <div className="banner">{message}</div>}
       <form onSubmit={submit}>
         <label>Title</label>
         <input name="title" required placeholder="SSS 2 Algebra revision" />
-        <label>Subject</label>
-        <input name="subject" placeholder="Mathematics" required />
-        <label>Class level</label>
-        <input name="class_level" placeholder="SSS 2" required />
-        <label>Type</label>
-        <select name="resource_type" defaultValue="notes">
-          <option value="notes">Notes</option>
-          <option value="past_paper">Past paper</option>
-          <option value="assignment">Assignment</option>
-          <option value="other">Other</option>
-        </select>
-        <label>Academic year</label>
-        <input name="academic_year" placeholder="2025/2026" />
+
+        <div className="form-grid">
+          <div>
+            <label>Subject</label>
+            <select name="subject" required defaultValue="Mathematics">
+              {SUBJECTS.map((name) => <option key={name} value={name}>{name}</option>)}
+            </select>
+          </div>
+          <div>
+            <label>Class level</label>
+            <select name="class_level" required defaultValue="SSS 2">
+              {CLASS_LEVELS.map((name) => <option key={name} value={name}>{name}</option>)}
+            </select>
+          </div>
+          <div>
+            <label>Type</label>
+            <select name="resource_type" value={kind} onChange={(e) => setKind(e.target.value)}>
+              {RESOURCE_TYPES.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
+            </select>
+          </div>
+          <div>
+            <label>{kind === "past_paper" ? "Exam year" : "Academic year"}</label>
+            <select name="academic_year" defaultValue="2025">
+              <option value="">Not set</option>
+              {EXAM_YEARS.map((year) => <option key={year} value={year}>{year}</option>)}
+            </select>
+          </div>
+        </div>
+
         <label>Description</label>
-        <textarea name="description" rows="3" />
+        <textarea name="description" rows="3" placeholder="What this file covers, or which paper (Paper 1, Paper 2)" />
         <label>File</label>
         <input name="file" type="file" required />
         <button className="btn" disabled={busy}>{busy ? "Saving..." : "Upload to library"}</button>

@@ -1,17 +1,41 @@
 import { useEffect, useState } from "react";
 import { downloadResource, listResources } from "../api.js";
+import { CLASS_LEVELS, EXAM_YEARS, RESOURCE_TYPES, SUBJECTS, typeLabel } from "../catalog.js";
 import { saveOfflineResource } from "../offline/db.js";
+
+const emptyFilters = {
+  q: "",
+  resource_type: "",
+  subject: "",
+  class_level: "",
+  year_from: "",
+  year_to: "",
+  mine: false,
+};
 
 export default function Library({ user }) {
   const [items, setItems] = useState([]);
-  const [q, setQ] = useState("");
+  const [filters, setFilters] = useState(emptyFilters);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
 
-  async function load() {
+  function update(field, value) {
+    setFilters((current) => ({ ...current, [field]: value }));
+  }
+
+  async function load(next = filters) {
     try {
       setError("");
-      setItems(await listResources({ q }));
+      const params = {
+        q: next.q,
+        resource_type: next.resource_type,
+        subject: next.subject,
+        class_level: next.class_level,
+        year_from: next.year_from,
+        year_to: next.year_to,
+      };
+      if (next.mine) params.mine = "true";
+      setItems(await listResources(params));
     } catch (err) {
       setError(`${err.message}. If you are offline, open the Offline shelf.`);
     }
@@ -29,6 +53,16 @@ export default function Library({ user }) {
     }
   }
 
+  function apply(event) {
+    event.preventDefault();
+    load(filters);
+  }
+
+  function clearFilters() {
+    setFilters(emptyFilters);
+    load(emptyFilters);
+  }
+
   return (
     <>
       <section className="hero">
@@ -36,11 +70,11 @@ export default function Library({ user }) {
           <span className="kicker">{user.school_name || "LearnVult school"}</span>
           <h1>Resource library</h1>
           <p className="meta">
-            Welcome, {user.full_name}. Browse notes, past papers, and assignments for class.
+            Welcome, {user.full_name}. Search by title, then narrow by type, subject, class and year.
           </p>
         </div>
         <div className="stat">
-          <span>Materials in this library</span>
+          <span>Materials matching filters</span>
           <strong>{items.length}</strong>
         </div>
       </section>
@@ -48,12 +82,64 @@ export default function Library({ user }) {
       <div className="card">
         {error && <div className="banner error">{error}</div>}
         {message && <div className="banner">{message}</div>}
-        <form className="row" onSubmit={(e) => { e.preventDefault(); load(); }}>
-          <input placeholder="Search title, subject or class" value={q} onChange={(e) => setQ(e.target.value)} />
-          <button className="btn">Search</button>
+        <form onSubmit={apply}>
+          <label>Search</label>
+          <input
+            placeholder="Title, subject, class or description"
+            value={filters.q}
+            onChange={(e) => update("q", e.target.value)}
+          />
+          <div className="filter-grid">
+            <div>
+              <label>Type</label>
+              <select value={filters.resource_type} onChange={(e) => update("resource_type", e.target.value)}>
+                <option value="">All types</option>
+                {RESOURCE_TYPES.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
+              </select>
+            </div>
+            <div>
+              <label>Subject</label>
+              <select value={filters.subject} onChange={(e) => update("subject", e.target.value)}>
+                <option value="">All subjects</option>
+                {SUBJECTS.map((name) => <option key={name} value={name}>{name}</option>)}
+              </select>
+            </div>
+            <div>
+              <label>Class</label>
+              <select value={filters.class_level} onChange={(e) => update("class_level", e.target.value)}>
+                <option value="">All classes</option>
+                {CLASS_LEVELS.map((name) => <option key={name} value={name}>{name}</option>)}
+              </select>
+            </div>
+            <div>
+              <label>Year from</label>
+              <select value={filters.year_from} onChange={(e) => update("year_from", e.target.value)}>
+                <option value="">Any</option>
+                {EXAM_YEARS.map((year) => <option key={year} value={year}>{year}</option>)}
+              </select>
+            </div>
+            <div>
+              <label>Year to</label>
+              <select value={filters.year_to} onChange={(e) => update("year_to", e.target.value)}>
+                <option value="">Any</option>
+                {EXAM_YEARS.map((year) => <option key={year} value={year}>{year}</option>)}
+              </select>
+            </div>
+          </div>
+          {(user.role === "teacher" || user.role === "admin") && (
+            <label className="check-line">
+              <input type="checkbox" checked={filters.mine} onChange={(e) => update("mine", e.target.checked)} />
+              Only my uploads
+            </label>
+          )}
+          <div className="row">
+            <button className="btn" type="submit">Apply filters</button>
+            <button className="btn secondary" type="button" onClick={clearFilters}>Clear</button>
+          </div>
         </form>
+
         {!items.length && (
-          <p className="meta">No resources yet. Teachers can add files from Upload.</p>
+          <p className="meta">No materials match these filters. Teachers can add files from Upload.</p>
         )}
         {items.map((item) => (
           <article className="resource" key={item.id}>
@@ -62,7 +148,8 @@ export default function Library({ user }) {
               <div className="meta">
                 <span className="tag">{item.subject}</span>
                 <span className="tag">{item.class_level}</span>
-                {item.resource_type}
+                <span className="tag">{typeLabel(item.resource_type)}</span>
+                {item.academic_year && <span className="tag">{item.academic_year}</span>}
               </div>
             </div>
             <button className="btn secondary" onClick={() => keepOffline(item)}>Save offline</button>
