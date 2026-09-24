@@ -32,3 +32,21 @@ export async function syncStatus() {
 export async function flushSync() {
   return parse(await fetch(`${API}/api/sync/flush`, { method: "POST", headers: { ...authHeader() } }));
 }
+export async function adminSummary() {
+  return parse(await fetch(`${API}/api/admin/summary`, { headers: { ...authHeader() } }));
+}
+export async function adminUsers() {
+  return parse(await fetch(`${API}/api/admin/users`, { headers: { ...authHeader() } }));
+}
+export async function adminVerifyTeacher(id) {
+  return parse(await fetch(`${API}/api/admin/users/${id}/verify`, { method: "POST", headers: { ...authHeader() } }));
+}
+export async function adminUnverifyTeacher(id) {
+  return parse(await fetch(`${API}/api/admin/users/${id}/unverify`, { method: "POST", headers: { ...authHeader() } }));
+}
+export async function adminResources() {
+  return parse(await fetch(`${API}/api/admin/resources`, { headers: { ...authHeader() } }));
+}
+export async function adminDeleteResource(id) {
+  return parse(await fetch(`${API}/api/admin/resources/${id}`, { method: "DELETE", headers: { ...authHeader() } }));
+}

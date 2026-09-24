@@ -38,6 +38,7 @@ export default function Login({ onAuth }) {
           <button className="btn" disabled={busy}>{busy ? "Signing in..." : "Sign in"}</button>
         </form>
         <p className="meta">New teacher or student? <Link to="/register">Create an account</Link></p>
+        <p className="meta">School admin: admin@learnvult.sl</p>
       </div>
     </div>
   );
