@@ -3,12 +3,20 @@ import { listOfflineResources, openBlob } from "../offline/db.js";
 
 export default function Offline() {
   const [items, setItems] = useState([]);
-  useEffect(() => { listOfflineResources().then(setItems); }, []);
+  useEffect(() => {
+    listOfflineResources().then(setItems);
+  }, []);
+
   return (
     <div className="card">
-      <h1>Offline resources</h1>
-      <p className="meta">These files live on this device. You can open them even when there is no internet.</p>
-      {!items.length && <p>Nothing saved yet. Open the library while online and click Save offline.</p>}
+      <span className="kicker">On this device</span>
+      <h1>Offline shelf</h1>
+      <p className="meta page-intro">
+        These files stay on this phone or laptop. Open them even when there is no data.
+      </p>
+      {!items.length && (
+        <p className="meta">Nothing saved yet. Open the library while online and tap Save offline.</p>
+      )}
       {items.map((item) => (
         <article className="resource" key={item.id}>
           <div>

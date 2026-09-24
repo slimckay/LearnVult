@@ -49,8 +49,9 @@ export default function SyncStatus() {
 
   return (
     <div className="card">
+      <span className="kicker">Connection</span>
       <h1>Synchronization</h1>
-      <p className="meta">Files added while offline stay here until this device gets a connection.</p>
+      <p className="meta page-intro">Work done without internet waits here until this device finds a connection.</p>
       {error && <div className="banner error">{error}</div>}
       {message && <div className="banner">{message}</div>}
       <button className="btn" onClick={flush} disabled={busy}>

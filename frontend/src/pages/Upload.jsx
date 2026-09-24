@@ -13,14 +13,12 @@ export default function Upload() {
     const formEl = event.target;
     const form = new FormData(formEl);
     const file = form.get("file");
-
     setBusy(true);
     setError("");
     setMessage("");
-
     try {
       const created = await uploadResource(form);
-      setMessage(`Uploaded "${created.title}" to the server.`);
+      setMessage(`Uploaded "${created.title}" to the school library.`);
       formEl.reset();
     } catch (err) {
       if (isNetworkError(err) && file) {
@@ -46,15 +44,14 @@ export default function Upload() {
 
   return (
     <div className="card" style={{ maxWidth: 560 }}>
-      <h1>Upload a resource</h1>
-      <p className="meta">
-        If there is no internet, the file stays on this phone or laptop and waits in the Sync queue.
-      </p>
+      <span className="kicker">Teachers</span>
+      <h1>Add a class resource</h1>
+      <p className="meta page-intro">Notes, past papers, or assignments. If there is no internet, the file waits in Sync.</p>
       {error && <div className="banner error">{error}</div>}
       {message && <div className="banner">{message}</div>}
       <form onSubmit={submit}>
         <label>Title</label>
-        <input name="title" required />
+        <input name="title" required placeholder="SSS 2 Algebra revision" />
         <label>Subject</label>
         <input name="subject" placeholder="Mathematics" required />
         <label>Class level</label>
@@ -72,9 +69,7 @@ export default function Upload() {
         <textarea name="description" rows="3" />
         <label>File</label>
         <input name="file" type="file" required />
-        <button className="btn" disabled={busy}>
-          {busy ? "Saving..." : "Upload"}
-        </button>
+        <button className="btn" disabled={busy}>{busy ? "Saving..." : "Upload to library"}</button>
       </form>
     </div>
   );
