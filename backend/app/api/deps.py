@@ -25,4 +25,11 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
 def require_teacher(current_user: User = Depends(get_current_user)) -> User:
     if current_user.role not in {"teacher", "admin"}:
         raise HTTPException(status_code=403, detail="Teacher access required")
+    if current_user.role == "teacher" and not current_user.is_verified:
+        raise HTTPException(status_code=403, detail="Your teacher account is waiting for admin verification")
+    return current_user
+
+def require_admin(current_user: User = Depends(get_current_user)) -> User:
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
     return current_user

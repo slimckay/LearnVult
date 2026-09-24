@@ -17,6 +17,7 @@ class UserOut(BaseModel):
     email: EmailStr
     role: str
     school_name: str | None = None
+    is_verified: bool = False
     model_config = {"from_attributes": True}
 
 class TokenOut(BaseModel):
