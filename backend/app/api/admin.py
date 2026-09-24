@@ -1,0 +1,81 @@
+from pathlib import Path
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
+from app.api.deps import require_admin
+from app.database import get_db
+from app.models.resource import Resource, ResourceVersion
+from app.models.sync import SyncRecord
+from app.models.user import User
+from app.schemas.user import UserOut
+
+router = APIRouter(prefix="/api/admin", tags=["admin"])
+
+@router.get("/summary")
+def summary(_: User = Depends(require_admin), db: Session = Depends(get_db)):
+    users = db.query(User).count()
+    teachers = db.query(User).filter(User.role == "teacher").count()
+    pending = db.query(User).filter(User.role == "teacher", User.is_verified.is_(False)).count()
+    resources = db.query(Resource).count()
+    return {"users": users, "teachers": teachers, "pending_teachers": pending, "resources": resources}
+
+@router.get("/users", response_model=list[UserOut])
+def list_users(_: User = Depends(require_admin), db: Session = Depends(get_db)):
+    return db.query(User).order_by(User.created_at.desc()).all()
+
+@router.post("/users/{user_id}/verify", response_model=UserOut)
+def verify_teacher(user_id: int, _: User = Depends(require_admin), db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    if user.role != "teacher":
+        raise HTTPException(status_code=400, detail="Only teachers can be verified")
+    user.is_verified = True
+    db.commit()
+    db.refresh(user)
+    return user
+
+@router.post("/users/{user_id}/unverify", response_model=UserOut)
+def unverify_teacher(user_id: int, _: User = Depends(require_admin), db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    if user.role != "teacher":
+        raise HTTPException(status_code=400, detail="Only teachers can be unverified")
+    user.is_verified = False
+    db.commit()
+    db.refresh(user)
+    return user
+
+@router.get("/resources")
+def list_all_resources(_: User = Depends(require_admin), db: Session = Depends(get_db)):
+    rows = db.query(Resource).order_by(Resource.created_at.desc()).all()
+    out = []
+    for item in rows:
+        owner = item.owner
+        out.append({
+            "id": item.id,
+            "title": item.title,
+            "subject": item.subject,
+            "class_level": item.class_level,
+            "resource_type": item.resource_type,
+            "filename": item.filename,
+            "owner_id": item.owner_id,
+            "owner_name": owner.full_name if owner else None,
+            "owner_email": owner.email if owner else None,
+            "created_at": item.created_at,
+        })
+    return out
+
+@router.delete("/resources/{resource_id}")
+def delete_resource(resource_id: int, _: User = Depends(require_admin), db: Session = Depends(get_db)):
+    resource = db.query(Resource).filter(Resource.id == resource_id).first()
+    if not resource:
+        raise HTTPException(status_code=404, detail="Resource not found")
+    path = Path(resource.stored_path)
+    db.query(SyncRecord).filter(SyncRecord.resource_id == resource_id).delete()
+    db.query(ResourceVersion).filter(ResourceVersion.resource_id == resource_id).delete()
+    db.delete(resource)
+    db.commit()
+    if path.exists():
+        path.unlink()
+    return {"ok": True, "deleted": resource_id}
