@@ -41,11 +41,6 @@ npm install
 npm run dev
 ```
 
-Demo accounts (created on first backend start):
-
-- Teacher: `teacher@learnvult.sl` / `Teacher123!`
-- Student: `student@learnvult.sl` / `Student123!`
-
 ## Live hosting
 
 One GitHub repo. One public website.
