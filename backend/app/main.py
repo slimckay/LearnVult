@@ -24,18 +24,47 @@ def ensure_schema() -> None:
         with engine.begin() as conn:
             conn.execute(text("ALTER TABLE users ADD COLUMN is_verified BOOLEAN DEFAULT 0"))
 
-def seed_demo_users() -> None:
+def seed_users() -> None:
     db = SessionLocal()
     try:
-        def upsert(email, full_name, password, role, school, verified):
-            user = db.query(User).filter(User.email == email).first()
-            if user:
-                user.is_verified = verified
-                return
-            db.add(User(full_name=full_name, email=email, hashed_password=hash_password(password), role=role, school_name=school, is_verified=verified))
-        upsert("admin@learnvult.sl", "LearnVult Admin", "Admin123!", "admin", "LearnVult", True)
-        upsert("teacher@learnvult.sl", "Aminata Teacher", "Teacher123!", "teacher", "Demo Secondary School", True)
-        upsert("student@learnvult.sl", "Sorie Student", "Student123!", "student", "Demo Secondary School", True)
+        teacher = db.query(User).filter(User.email == "teacher@learnvult.sl").first()
+        if not teacher:
+            db.add(User(
+                full_name="Aminata Teacher",
+                email="teacher@learnvult.sl",
+                hashed_password=hash_password("Teacher123!"),
+                role="teacher",
+                school_name="Demo Secondary School",
+                is_verified=True,
+            ))
+        student = db.query(User).filter(User.email == "student@learnvult.sl").first()
+        if not student:
+            db.add(User(
+                full_name="Sorie Student",
+                email="student@learnvult.sl",
+                hashed_password=hash_password("Student123!"),
+                role="student",
+                school_name="Demo Secondary School",
+                is_verified=True,
+            ))
+
+        email = (settings.admin_email or "").strip().lower()
+        password = (settings.admin_password or "").strip()
+        if email and password:
+            admin_user = db.query(User).filter(User.email == email).first()
+            if admin_user:
+                admin_user.role = "admin"
+                admin_user.is_verified = True
+                admin_user.hashed_password = hash_password(password)
+            else:
+                db.add(User(
+                    full_name=settings.admin_name or "LearnVult Admin",
+                    email=email,
+                    hashed_password=hash_password(password),
+                    role="admin",
+                    school_name="LearnVult",
+                    is_verified=True,
+                ))
         db.commit()
     finally:
         db.close()
@@ -43,7 +72,7 @@ def seed_demo_users() -> None:
 @app.on_event("startup")
 def on_startup() -> None:
     ensure_schema()
-    seed_demo_users()
+    seed_users()
 
 @app.get("/api/health")
 def health():

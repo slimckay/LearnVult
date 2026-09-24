@@ -3,8 +3,8 @@ import { Link } from "react-router-dom";
 import { login } from "../api.js";
 
 export default function Login({ onAuth }) {
-  const [email, setEmail] = useState("teacher@learnvult.sl");
-  const [password, setPassword] = useState("Teacher123!");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -32,13 +32,12 @@ export default function Login({ onAuth }) {
         {error && <div className="banner error">{error}</div>}
         <form onSubmit={submit}>
           <label>Email</label>
-          <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" required />
+          <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" required autoComplete="username" />
           <label>Password</label>
-          <input value={password} onChange={(e) => setPassword(e.target.value)} type="password" required />
+          <input value={password} onChange={(e) => setPassword(e.target.value)} type="password" required autoComplete="current-password" />
           <button className="btn" disabled={busy}>{busy ? "Signing in..." : "Sign in"}</button>
         </form>
         <p className="meta">New teacher or student? <Link to="/register">Create an account</Link></p>
-        <p className="meta">School admin: admin@learnvult.sl</p>
       </div>
     </div>
   );

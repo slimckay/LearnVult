@@ -8,6 +8,9 @@ class Settings(BaseSettings):
     upload_dir: str = "storage/uploads"
     cors_origins: str = "http://localhost:5173,http://127.0.0.1:5173"
     algorithm: str = "HS256"
+    admin_email: str = ""
+    admin_password: str = ""
+    admin_name: str = "LearnVult Admin"
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
