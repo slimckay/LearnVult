@@ -6,6 +6,8 @@ Teachers upload and organise notes, past papers, and other materials. Students b
 
 Open the **LearnVult** folder in VS Code and follow [docs/GETTING_STARTED.md](docs/GETTING_STARTED.md).
 
+There is **one live site**. Test on your laptop, then host the website on Vercel and the API on Render. See [docs/GO_LIVE.md](docs/GO_LIVE.md).
+
 ## Project layout
 
 ```
@@ -43,3 +45,14 @@ Demo accounts (created on first backend start):
 
 - Teacher: `teacher@learnvult.sl` / `Teacher123!`
 - Student: `student@learnvult.sl` / `Student123!`
+
+## Live hosting
+
+One GitHub repo. One public website.
+
+1. Deploy `backend/` to Render.
+2. Deploy `frontend/` to Vercel.
+3. Set `VITE_API_URL` on Vercel to the Render URL.
+4. Set `CORS_ORIGINS` on Render to the Vercel URL.
+
+Full clicks: [docs/GO_LIVE.md](docs/GO_LIVE.md).
