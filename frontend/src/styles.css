@@ -8,9 +8,10 @@
   --gold: #d4a017;
   --blue: #1d4e89;
   --card: #fffdf8;
-  --line: #d7ded4;
+  --line: rgba(255, 255, 255, 0.45);
   --danger: #9b2c2c;
-  --shadow: 0 16px 40px rgba(11, 61, 46, 0.14);
+  --shadow: 0 16px 40px rgba(20, 16, 8, 0.18);
+  --glass: rgba(255, 253, 248, 0.52);
 }
 
 * { box-sizing: border-box; }
@@ -18,7 +19,7 @@ html, body, #root { margin: 0; min-height: 100%; }
 body {
   font-family: "DM Sans", "Segoe UI", sans-serif;
   color: var(--ink);
-  background-color: #163a6b;
+  background-color: #c9a36a;
 }
 h1, h2, .brand-name, .splash h1 {
   font-family: Fraunces, Georgia, serif;
@@ -28,6 +29,16 @@ button, input, select, textarea { font: inherit; }
 
 .shell { max-width: 1040px; margin: 0 auto; padding: 18px 16px 72px; }
 
+.topbar,
+.hero-card,
+.card {
+  background: var(--glass);
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(18px) saturate(1.2);
+  -webkit-backdrop-filter: blur(18px) saturate(1.2);
+}
+
 .topbar {
   display: flex;
   justify-content: space-between;
@@ -35,10 +46,7 @@ button, input, select, textarea { font: inherit; }
   align-items: center;
   padding: 10px 14px;
   margin-bottom: 22px;
-  background: rgba(255, 253, 248, 0.92);
-  border: 1px solid #d7ded4;
   border-radius: 18px;
-  backdrop-filter: blur(10px);
 }
 .brand { display: flex; gap: 12px; align-items: center; }
 .logo-mark {
@@ -81,11 +89,8 @@ nav a.active {
   margin-bottom: 16px;
 }
 .hero-card, .card {
-  background: rgba(255, 253, 248, 0.96);
-  border: 1px solid #d7ded4;
   border-radius: 20px;
   padding: 22px;
-  box-shadow: var(--shadow);
 }
 .hero h1, .card h1 { margin: 0 0 8px; font-size: 1.7rem; }
 .kicker {
@@ -99,10 +104,12 @@ nav a.active {
 }
 .stat-grid { display: grid; gap: 10px; }
 .stat {
-  background: var(--green);
+  background: rgba(11, 61, 46, 0.88);
   color: #fff;
   border-radius: 16px;
   padding: 16px;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
 .stat span { display: block; font-size: 0.78rem; opacity: 0.8; }
 .stat strong { font-family: Fraunces, serif; font-size: 1.3rem; }
@@ -111,9 +118,9 @@ label { display: block; margin: 0 0 6px; font-weight: 600; font-size: 0.92rem; }
 input, select, textarea {
   width: 100%;
   padding: 11px 12px;
-  border: 1px solid #d7ded4;
+  border: 1px solid rgba(215, 222, 212, 0.9);
   border-radius: 12px;
-  background: #fff;
+  background: rgba(255, 255, 255, 0.72);
   margin-bottom: 14px;
 }
 .btn {
@@ -126,13 +133,17 @@ input, select, textarea {
   font-weight: 600;
 }
 .btn:disabled { opacity: 0.65; cursor: default; }
-.btn.secondary { background: #fff; color: var(--green); border: 1px solid var(--green); }
+.btn.secondary {
+  background: rgba(255, 255, 255, 0.55);
+  color: var(--green);
+  border: 1px solid rgba(11, 61, 46, 0.35);
+}
 .btn.ghost { background: transparent; color: var(--ink); }
 .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 .row input { flex: 1; min-width: 180px; margin-bottom: 0; }
 
-.banner { padding: 10px 12px; border-radius: 12px; margin-bottom: 16px; background: #e8f4ee; }
-.banner.error { background: #fde8e8; color: var(--danger); }
+.banner { padding: 10px 12px; border-radius: 12px; margin-bottom: 16px; background: rgba(232, 244, 238, 0.8); }
+.banner.error { background: rgba(253, 232, 232, 0.85); color: var(--danger); }
 
 .offline-pill {
   font-size: 0.75rem;
@@ -150,7 +161,7 @@ input, select, textarea {
   gap: 12px;
   align-items: flex-start;
   padding: 14px 0;
-  border-bottom: 1px solid #eadfca;
+  border-bottom: 1px solid rgba(234, 223, 202, 0.7);
 }
 .resource:last-child { border-bottom: 0; }
 .meta { color: var(--muted); font-size: 0.9rem; }
@@ -159,7 +170,7 @@ input, select, textarea {
   font-size: 0.72rem;
   padding: 2px 8px;
   border-radius: 999px;
-  background: #eef6f1;
+  background: rgba(238, 246, 241, 0.8);
   color: var(--green);
   margin-right: 6px;
 }

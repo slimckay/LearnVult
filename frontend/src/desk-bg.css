@@ -1,5 +1,14 @@
-/* School desk photo background */
+/* Fixed school desk background that does not scroll with the page */
 body {
+  background-color: #c9a36a;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
   background-color: #c9a36a;
   background-image:
     linear-gradient(180deg, rgba(40, 24, 8, 0.16) 0%, rgba(40, 24, 8, 0.28) 100%),
@@ -7,12 +16,4 @@ body {
   background-size: cover;
   background-position: center center;
   background-repeat: no-repeat;
-  background-attachment: fixed;
-}
-
-@media (max-width: 760px) {
-  body {
-    background-attachment: scroll;
-    background-position: center top;
-  }
 }
