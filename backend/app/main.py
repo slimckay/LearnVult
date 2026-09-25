@@ -5,9 +5,9 @@ from app.api import admin, auth, resources, sync
 from app.config import settings
 from app.core.security import hash_password
 from app.database import Base, SessionLocal, engine
-from app.models import User
+from app.models import FileBlob, User  # noqa: F401
 
-app = FastAPI(title=settings.app_name, version="0.2.0")
+app = FastAPI(title=settings.app_name, version="0.3.0")
 app.add_middleware(CORSMiddleware, allow_origins=settings.origins, allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
 app.include_router(auth.router)
 app.include_router(resources.router)
@@ -20,15 +20,17 @@ def ensure_schema() -> None:
     if "users" not in inspector.get_table_names():
         return
     columns = {col["name"] for col in inspector.get_columns("users")}
+    time_type = "TIMESTAMP" if settings.uses_postgres else "DATETIME"
+    bool_default = "FALSE" if settings.uses_postgres else "0"
     statements = []
     if "is_verified" not in columns:
-        statements.append("ALTER TABLE users ADD COLUMN is_verified BOOLEAN DEFAULT 0")
+        statements.append(f"ALTER TABLE users ADD COLUMN is_verified BOOLEAN DEFAULT {bool_default}")
     if "reset_code_hash" not in columns:
         statements.append("ALTER TABLE users ADD COLUMN reset_code_hash VARCHAR(255)")
     if "reset_expires_at" not in columns:
-        statements.append("ALTER TABLE users ADD COLUMN reset_expires_at DATETIME")
+        statements.append(f"ALTER TABLE users ADD COLUMN reset_expires_at {time_type}")
     if "reset_requested" not in columns:
-        statements.append("ALTER TABLE users ADD COLUMN reset_requested BOOLEAN DEFAULT 0")
+        statements.append(f"ALTER TABLE users ADD COLUMN reset_requested BOOLEAN DEFAULT {bool_default}")
     if statements:
         with engine.begin() as conn:
             for sql in statements:
@@ -86,4 +88,9 @@ def on_startup() -> None:
 
 @app.get("/api/health")
 def health():
-    return {"status": "ok", "app": settings.app_name}
+    return {
+        "status": "ok",
+        "app": settings.app_name,
+        "database": "postgres" if settings.uses_postgres else "sqlite",
+        "files": "postgres" if settings.uses_postgres else "disk",
+    }
