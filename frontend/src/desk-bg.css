@@ -1,0 +1,14 @@
+/* School desk photo background */
+body {
+  background-color: #163a6b;
+  background-image:
+    linear-gradient(180deg, rgba(10, 28, 54, 0.30) 0%, rgba(10, 28, 54, 0.45) 100%),
+    url("/school-desk.jpg");
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+}
+@media (max-width: 760px) {
+  body { background-attachment: scroll; }
+}
