@@ -37,6 +37,7 @@ export default function Login({ onAuth }) {
           <input value={password} onChange={(e) => setPassword(e.target.value)} type="password" required autoComplete="current-password" />
           <button className="btn" disabled={busy}>{busy ? "Signing in..." : "Sign in"}</button>
         </form>
+        <p className="meta"><Link to="/forgot">Forgot password?</Link></p>
         <p className="meta">New teacher or student? <Link to="/register">Create an account</Link></p>
       </div>
     </div>

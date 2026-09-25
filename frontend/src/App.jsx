@@ -2,6 +2,8 @@ import { NavLink, Navigate, Route, Routes, useNavigate } from "react-router-dom"
 import { useEffect, useState } from "react";
 import Login from "./pages/Login.jsx";
 import Register from "./pages/Register.jsx";
+import ForgotPassword from "./pages/ForgotPassword.jsx";
+import ResetPassword from "./pages/ResetPassword.jsx";
 import Library from "./pages/Library.jsx";
 import Upload from "./pages/Upload.jsx";
 import Offline from "./pages/Offline.jsx";
@@ -109,6 +111,8 @@ export default function App() {
         <Route path="/" element={<Navigate to={user ? "/library" : "/login"} />} />
         <Route path="/login" element={<Login onAuth={handleAuth} />} />
         <Route path="/register" element={<Register onAuth={handleAuth} />} />
+        <Route path="/forgot" element={<ForgotPassword />} />
+        <Route path="/reset" element={<ResetPassword />} />
         <Route path="/library" element={user ? <Library user={user} /> : <Navigate to="/login" />} />
         <Route path="/upload" element={user ? <Upload /> : <Navigate to="/login" />} />
         <Route path="/offline" element={<Offline />} />
