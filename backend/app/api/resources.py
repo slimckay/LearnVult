@@ -1,16 +1,17 @@
 import re
 from pathlib import Path
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, Response
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
 from app.api.deps import get_current_user, require_teacher
 from app.database import get_db
+from app.models.file_blob import FileBlob
 from app.models.resource import Resource, ResourceVersion
 from app.models.sync import SyncRecord
 from app.models.user import User
 from app.schemas.resource import ResourceOut
-from app.services.storage import save_upload
+from app.services.storage import blob_id_from_path, is_db_file, save_upload
 
 router = APIRouter(prefix="/api/resources", tags=["resources"])
 
@@ -88,7 +89,7 @@ def upload_resource(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_teacher),
 ):
-    original, stored_path, size = save_upload(file)
+    original, stored_path, size = save_upload(file, db)
     resource = Resource(
         title=title.strip(),
         description=description,
@@ -123,6 +124,12 @@ def download_resource(resource_id: int, db: Session = Depends(get_db), _: User =
     resource = db.query(Resource).filter(Resource.id == resource_id).first()
     if not resource:
         raise HTTPException(status_code=404, detail="Resource not found")
+    if is_db_file(resource.stored_path):
+        blob = db.query(FileBlob).filter(FileBlob.id == blob_id_from_path(resource.stored_path)).first()
+        if not blob:
+            raise HTTPException(status_code=404, detail="File missing on server")
+        headers = {"Content-Disposition": f'attachment; filename="{resource.filename}"'} 
+        return Response(content=blob.data, media_type=resource.mime_type or blob.mime_type or "application/octet-stream", headers=headers)
     path = Path(resource.stored_path)
     if not path.exists():
         raise HTTPException(status_code=404, detail="File missing on server")

@@ -5,10 +5,12 @@ from app.api.auth import assign_reset_code
 from app.api.deps import require_admin
 from app.core.security import hash_password
 from app.database import get_db
+from app.models.file_blob import FileBlob
 from app.models.resource import Resource, ResourceVersion
 from app.models.sync import SyncRecord
 from app.models.user import User
 from app.schemas.user import AdminPasswordIn, UserOut
+from app.services.storage import blob_id_from_path, is_db_file
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
 
@@ -100,11 +102,17 @@ def delete_resource(resource_id: int, _: User = Depends(require_admin), db: Sess
     resource = db.query(Resource).filter(Resource.id == resource_id).first()
     if not resource:
         raise HTTPException(status_code=404, detail="Resource not found")
-    path = Path(resource.stored_path)
+    stored_path = resource.stored_path
     db.query(SyncRecord).filter(SyncRecord.resource_id == resource_id).delete()
     db.query(ResourceVersion).filter(ResourceVersion.resource_id == resource_id).delete()
     db.delete(resource)
+    if is_db_file(stored_path):
+        blob = db.query(FileBlob).filter(FileBlob.id == blob_id_from_path(stored_path)).first()
+        if blob:
+            db.delete(blob)
     db.commit()
-    if path.exists():
-        path.unlink()
+    if stored_path and not is_db_file(stored_path):
+        path = Path(stored_path)
+        if path.exists():
+            path.unlink()
     return {"ok": True, "deleted": resource_id}
