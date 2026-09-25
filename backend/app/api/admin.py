@@ -1,12 +1,14 @@
 from pathlib import Path
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+from app.api.auth import assign_reset_code
 from app.api.deps import require_admin
+from app.core.security import hash_password
 from app.database import get_db
 from app.models.resource import Resource, ResourceVersion
 from app.models.sync import SyncRecord
 from app.models.user import User
-from app.schemas.user import UserOut
+from app.schemas.user import AdminPasswordIn, UserOut
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
 
@@ -15,8 +17,9 @@ def summary(_: User = Depends(require_admin), db: Session = Depends(get_db)):
     users = db.query(User).count()
     teachers = db.query(User).filter(User.role == "teacher").count()
     pending = db.query(User).filter(User.role == "teacher", User.is_verified.is_(False)).count()
+    resets = db.query(User).filter(User.reset_requested.is_(True)).count()
     resources = db.query(Resource).count()
-    return {"users": users, "teachers": teachers, "pending_teachers": pending, "resources": resources}
+    return {"users": users, "teachers": teachers, "pending_teachers": pending, "password_resets": resets, "resources": resources}
 
 @router.get("/users", response_model=list[UserOut])
 def list_users(_: User = Depends(require_admin), db: Session = Depends(get_db)):
@@ -42,6 +45,32 @@ def unverify_teacher(user_id: int, _: User = Depends(require_admin), db: Session
     if user.role != "teacher":
         raise HTTPException(status_code=400, detail="Only teachers can be unverified")
     user.is_verified = False
+    db.commit()
+    db.refresh(user)
+    return user
+
+@router.post("/users/{user_id}/reset-code")
+def issue_reset_code(user_id: int, _: User = Depends(require_admin), db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    if user.role == "admin":
+        raise HTTPException(status_code=400, detail="Use environment variables to change the admin password")
+    code = assign_reset_code(user)
+    db.commit()
+    return {"ok": True, "email": user.email, "code": code, "detail": f"Give {user.full_name} this code. It expires in 2 hours."}
+
+@router.post("/users/{user_id}/password", response_model=UserOut)
+def set_password(user_id: int, payload: AdminPasswordIn, _: User = Depends(require_admin), db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    if user.role == "admin":
+        raise HTTPException(status_code=400, detail="Use environment variables to change the admin password")
+    user.hashed_password = hash_password(payload.password)
+    user.reset_code_hash = None
+    user.reset_expires_at = None
+    user.reset_requested = False
     db.commit()
     db.refresh(user)
     return user
