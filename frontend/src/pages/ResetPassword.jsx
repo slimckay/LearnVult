@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { resetPassword } from "../api.js";
 
 export default function ResetPassword() {
   const navigate = useNavigate();
-  const [email, setEmail] = useState("");
-  const [code, setCode] = useState("");
+  const [params] = useSearchParams();
+  const [email, setEmail] = useState(params.get("email") || "");
+  const [code, setCode] = useState(params.get("code") || "");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [error, setError] = useState("");
@@ -37,7 +38,7 @@ export default function ResetPassword() {
       <div className="card">
         <span className="kicker">Account help</span>
         <h1>Create a new password</h1>
-        <p className="meta page-intro">Use the 6-digit code from your school admin, then choose a new password.</p>
+        <p className="meta page-intro">Use the 6-digit code from the previous page, then choose a new password.</p>
         {error && <div className="banner error">{error}</div>}
         {message && <div className="banner">{message}</div>}
         <form onSubmit={submit}>
@@ -51,7 +52,7 @@ export default function ResetPassword() {
           <input value={confirm} onChange={(e) => setConfirm(e.target.value)} type="password" minLength={8} required />
           <button className="btn" disabled={busy}>{busy ? "Saving..." : "Save new password"}</button>
         </form>
-        <p className="meta"><Link to="/forgot">Request a code</Link> · <Link to="/login">Sign in</Link></p>
+        <p className="meta"><Link to="/forgot">Get a new code</Link> · <Link to="/login">Sign in</Link></p>
       </div>
     </div>
   );

@@ -10,7 +10,7 @@ from app.schemas.user import ForgotPasswordIn, ResetPasswordIn, TokenOut, UserCr
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 ALLOWED_ROLES = {"student", "teacher"}
 RESET_HOURS = 2
-GENERIC = "If that email is registered, ask your school admin for a reset code, then open Create new password."
+UNKNOWN = "If that email is on LearnVult, use the code shown on this page to create a new password."
 
 def assign_reset_code(user: User) -> str:
     code = f"{randbelow(1000000):06d}"
@@ -52,10 +52,16 @@ def login(payload: UserLogin, db: Session = Depends(get_db)):
 @router.post("/forgot")
 def forgot_password(payload: ForgotPasswordIn, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == payload.email.lower()).first()
-    if user:
-        assign_reset_code(user)
-        db.commit()
-    return {"ok": True, "detail": GENERIC}
+    if not user:
+        return {"ok": True, "detail": UNKNOWN, "code": None}
+    code = assign_reset_code(user)
+    db.commit()
+    return {
+        "ok": True,
+        "code": code,
+        "expires_in_hours": RESET_HOURS,
+        "detail": "Use this code now to create a new password. It expires in 2 hours.",
+    }
 
 @router.post("/reset")
 def reset_password(payload: ResetPasswordIn, db: Session = Depends(get_db)):
