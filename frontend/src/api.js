@@ -14,6 +14,12 @@ export async function login(email, password) {
 export async function register(payload) {
   return parse(await fetch(`${API}/api/auth/register`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) }));
 }
+export async function forgotPassword(email) {
+  return parse(await fetch(`${API}/api/auth/forgot`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email }) }));
+}
+export async function resetPassword(payload) {
+  return parse(await fetch(`${API}/api/auth/reset`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) }));
+}
 export async function listResources(params = {}) {
   const query = new URLSearchParams(Object.fromEntries(Object.entries(params).filter(([, value]) => value))).toString();
   return parse(await fetch(`${API}/api/resources${query ? `?${query}` : ""}`, { headers: { ...authHeader() } }));
@@ -43,6 +49,12 @@ export async function adminVerifyTeacher(id) {
 }
 export async function adminUnverifyTeacher(id) {
   return parse(await fetch(`${API}/api/admin/users/${id}/unverify`, { method: "POST", headers: { ...authHeader() } }));
+}
+export async function adminIssueResetCode(id) {
+  return parse(await fetch(`${API}/api/admin/users/${id}/reset-code`, { method: "POST", headers: { ...authHeader() } }));
+}
+export async function adminSetPassword(id, password) {
+  return parse(await fetch(`${API}/api/admin/users/${id}/password`, { method: "POST", headers: { "Content-Type": "application/json", ...authHeader() }, body: JSON.stringify({ password }) }));
 }
 export async function adminResources() {
   return parse(await fetch(`${API}/api/admin/resources`, { headers: { ...authHeader() } }));

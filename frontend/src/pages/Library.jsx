@@ -19,10 +19,6 @@ export default function Library({ user }) {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
 
-  function update(field, value) {
-    setFilters((current) => ({ ...current, [field]: value }));
-  }
-
   async function load(next = filters) {
     try {
       setError("");
@@ -39,6 +35,12 @@ export default function Library({ user }) {
     } catch (err) {
       setError(`${err.message}. If you are offline, open the Offline shelf.`);
     }
+  }
+
+  function update(field, value) {
+    const next = { ...filters, [field]: value };
+    setFilters(next);
+    if (field !== "q") load(next);
   }
 
   useEffect(() => { load(); }, []);
@@ -70,7 +72,7 @@ export default function Library({ user }) {
           <span className="kicker">{user.school_name || "LearnVult school"}</span>
           <h1>Resource library</h1>
           <p className="meta">
-            Welcome, {user.full_name}. Search by title, then narrow by type, subject, class and year.
+            Welcome, {user.full_name}. Students and teachers can search and filter notes or past papers by subject, class and year.
           </p>
         </div>
         <div className="stat">
@@ -139,7 +141,7 @@ export default function Library({ user }) {
         </form>
 
         {!items.length && (
-          <p className="meta">No materials match these filters. Teachers can add files from Upload.</p>
+          <p className="meta">No materials match these filters. Ask a teacher to upload the file, or clear the filters.</p>
         )}
         {items.map((item) => (
           <article className="resource" key={item.id}>

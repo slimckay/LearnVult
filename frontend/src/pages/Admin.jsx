@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import {
   adminDeleteResource,
+  adminIssueResetCode,
   adminResources,
+  adminSetPassword,
   adminSummary,
   adminUnverifyTeacher,
   adminUsers,
@@ -39,9 +41,10 @@ export default function Admin() {
     setError("");
     setMessage("");
     try {
-      await action();
-      setMessage(success);
+      const result = await action();
+      setMessage(success(result));
       await load();
+      return result;
     } catch (err) {
       setError(err.message);
     } finally {
@@ -50,6 +53,7 @@ export default function Admin() {
   }
 
   const teachers = users.filter((u) => u.role === "teacher");
+  const waiting = users.filter((u) => u.reset_requested);
 
   return (
     <>
@@ -57,11 +61,11 @@ export default function Admin() {
         <div className="hero-card">
           <span className="kicker">School control</span>
           <h1>Admin dashboard</h1>
-          <p className="meta">View accounts, verify teachers, and remove materials from the library.</p>
+          <p className="meta">View accounts, verify teachers, reset passwords, and remove materials.</p>
         </div>
         <div className="stat">
-          <span>Pending teacher checks</span>
-          <strong>{summary ? summary.pending_teachers : "—"}</strong>
+          <span>Password reset requests</span>
+          <strong>{summary ? summary.password_resets : "—"}</strong>
         </div>
       </section>
 
@@ -91,9 +95,9 @@ export default function Admin() {
               </div>
             </div>
             {person.is_verified ? (
-              <button className="btn ghost" disabled={busy} onClick={() => run(() => adminUnverifyTeacher(person.id), `${person.full_name} is no longer verified.`)}>Remove verification</button>
+              <button className="btn ghost" disabled={busy} onClick={() => run(() => adminUnverifyTeacher(person.id), () => `${person.full_name} is no longer verified.`)}>Remove verification</button>
             ) : (
-              <button className="btn" disabled={busy} onClick={() => run(() => adminVerifyTeacher(person.id), `${person.full_name} can now upload.`)}>Verify teacher</button>
+              <button className="btn" disabled={busy} onClick={() => run(() => adminVerifyTeacher(person.id), () => `${person.full_name} can now upload.`)}>Verify teacher</button>
             )}
           </article>
         ))}
@@ -101,12 +105,34 @@ export default function Admin() {
 
       <div className="card" style={{ marginBottom: 16 }}>
         <h2>All accounts</h2>
+        {waiting.length > 0 && <p className="meta">{waiting.length} account(s) asked for a new password.</p>}
         {users.map((person) => (
           <article className="resource" key={person.id}>
             <div>
               <strong>{person.full_name}</strong>
-              <div className="meta"><span className="tag">{person.role}</span> {person.email}</div>
+              <div className="meta">
+                <span className="tag">{person.role}</span>
+                {person.email}
+                {person.reset_requested && <span className="tag">Reset requested</span>}
+              </div>
             </div>
+            {person.role !== "admin" && (
+              <div className="row">
+                <button className="btn secondary" disabled={busy} onClick={() => run(
+                  () => adminIssueResetCode(person.id),
+                  (data) => `Code for ${person.full_name}: ${data.code}. Give it to them. It expires in 2 hours.`,
+                )}>Give reset code</button>
+                <button className="btn ghost" disabled={busy} onClick={() => {
+                  const password = window.prompt(`New password for ${person.full_name} (8+ characters)`);
+                  if (!password) return;
+                  if (password.length < 8) {
+                    setError("Password must be at least 8 characters.");
+                    return;
+                  }
+                  run(() => adminSetPassword(person.id, password), () => `Password updated for ${person.full_name}. Tell them the new password.`);
+                }}>Set password</button>
+              </div>
+            )}
           </article>
         ))}
       </div>
@@ -123,7 +149,7 @@ export default function Admin() {
             </div>
             <button className="btn ghost" disabled={busy} onClick={() => {
               if (window.confirm(`Remove "${item.title}" from the library?`)) {
-                run(() => adminDeleteResource(item.id), `Removed "${item.title}".`);
+                run(() => adminDeleteResource(item.id), () => `Removed "${item.title}".`);
               }
             }}>Remove</button>
           </article>
