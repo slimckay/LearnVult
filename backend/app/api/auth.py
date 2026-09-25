@@ -1,12 +1,23 @@
+from datetime import datetime, timedelta
+from secrets import randbelow
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.core.security import create_access_token, hash_password, verify_password
 from app.database import get_db
 from app.models.user import User
-from app.schemas.user import TokenOut, UserCreate, UserLogin, UserOut
+from app.schemas.user import ForgotPasswordIn, ResetPasswordIn, TokenOut, UserCreate, UserLogin, UserOut
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 ALLOWED_ROLES = {"student", "teacher"}
+RESET_HOURS = 2
+GENERIC = "If that email is registered, ask your school admin for a reset code, then open Create new password."
+
+def assign_reset_code(user: User) -> str:
+    code = f"{randbelow(1000000):06d}"
+    user.reset_code_hash = hash_password(code)
+    user.reset_expires_at = datetime.utcnow() + timedelta(hours=RESET_HOURS)
+    user.reset_requested = True
+    return code
 
 @router.post("/register", response_model=TokenOut)
 def register(payload: UserCreate, db: Session = Depends(get_db)):
@@ -37,3 +48,27 @@ def login(payload: UserLogin, db: Session = Depends(get_db)):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid email or password")
     token = create_access_token(user.email, user.role)
     return TokenOut(access_token=token, user=UserOut.model_validate(user))
+
+@router.post("/forgot")
+def forgot_password(payload: ForgotPasswordIn, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.email == payload.email.lower()).first()
+    if user:
+        assign_reset_code(user)
+        db.commit()
+    return {"ok": True, "detail": GENERIC}
+
+@router.post("/reset")
+def reset_password(payload: ResetPasswordIn, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.email == payload.email.lower()).first()
+    if not user or not user.reset_code_hash or not user.reset_expires_at:
+        raise HTTPException(status_code=400, detail="Reset code is invalid or has expired")
+    if user.reset_expires_at < datetime.utcnow():
+        raise HTTPException(status_code=400, detail="Reset code is invalid or has expired")
+    if not verify_password(payload.code.strip(), user.reset_code_hash):
+        raise HTTPException(status_code=400, detail="Reset code is invalid or has expired")
+    user.hashed_password = hash_password(payload.new_password)
+    user.reset_code_hash = None
+    user.reset_expires_at = None
+    user.reset_requested = False
+    db.commit()
+    return {"ok": True, "detail": "Password updated. You can sign in now."}

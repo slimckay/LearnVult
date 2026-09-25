@@ -12,5 +12,8 @@ class User(Base):
     role: Mapped[str] = mapped_column(String(20), default="student")
     school_name: Mapped[str | None] = mapped_column(String(160), nullable=True)
     is_verified: Mapped[bool] = mapped_column(Boolean, default=False)
+    reset_code_hash: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    reset_expires_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    reset_requested: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
     resources = relationship("Resource", back_populates="owner")

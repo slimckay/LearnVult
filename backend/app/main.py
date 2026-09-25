@@ -20,9 +20,19 @@ def ensure_schema() -> None:
     if "users" not in inspector.get_table_names():
         return
     columns = {col["name"] for col in inspector.get_columns("users")}
+    statements = []
     if "is_verified" not in columns:
+        statements.append("ALTER TABLE users ADD COLUMN is_verified BOOLEAN DEFAULT 0")
+    if "reset_code_hash" not in columns:
+        statements.append("ALTER TABLE users ADD COLUMN reset_code_hash VARCHAR(255)")
+    if "reset_expires_at" not in columns:
+        statements.append("ALTER TABLE users ADD COLUMN reset_expires_at DATETIME")
+    if "reset_requested" not in columns:
+        statements.append("ALTER TABLE users ADD COLUMN reset_requested BOOLEAN DEFAULT 0")
+    if statements:
         with engine.begin() as conn:
-            conn.execute(text("ALTER TABLE users ADD COLUMN is_verified BOOLEAN DEFAULT 0"))
+            for sql in statements:
+                conn.execute(text(sql))
 
 def seed_users() -> None:
     db = SessionLocal()
