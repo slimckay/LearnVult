@@ -18,4 +18,17 @@ class Settings(BaseSettings):
     def origins(self) -> list[str]:
         return [item.strip() for item in self.cors_origins.split(",") if item.strip()]
 
+    @property
+    def sqlalchemy_url(self) -> str:
+        url = (self.database_url or "").strip()
+        if url.startswith("postgres://"):
+            url = "postgresql+psycopg2://" + url[len("postgres://"):]
+        elif url.startswith("postgresql://") and "+psycopg2" not in url:
+            url = "postgresql+psycopg2://" + url[len("postgresql://"):]
+        return url or "sqlite:///./learnvult.db"
+
+    @property
+    def uses_postgres(self) -> bool:
+        return self.sqlalchemy_url.startswith("postgresql")
+
 settings = Settings()
