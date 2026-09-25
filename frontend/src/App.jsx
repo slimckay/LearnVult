@@ -9,6 +9,7 @@ import Upload from "./pages/Upload.jsx";
 import Offline from "./pages/Offline.jsx";
 import SyncStatus from "./pages/SyncStatus.jsx";
 import Admin from "./pages/Admin.jsx";
+import Reader from "./pages/Reader.jsx";
 import Splash from "./components/Splash.jsx";
 import { flushUploadQueue } from "./offline/syncQueue.js";
 
@@ -19,6 +20,7 @@ function readUser() {
 
 function Layout({ user, onLogout, children }) {
   const [online, setOnline] = useState(navigator.onLine);
+  const [installEvent, setInstallEvent] = useState(null);
 
   useEffect(() => {
     const on = async () => {
@@ -28,13 +30,26 @@ function Layout({ user, onLogout, children }) {
       }
     };
     const off = () => setOnline(false);
+    const ready = (event) => {
+      event.preventDefault();
+      setInstallEvent(event);
+    };
     window.addEventListener("online", on);
     window.addEventListener("offline", off);
+    window.addEventListener("beforeinstallprompt", ready);
     return () => {
       window.removeEventListener("online", on);
       window.removeEventListener("offline", off);
+      window.removeEventListener("beforeinstallprompt", ready);
     };
   }, []);
+
+  async function installApp() {
+    if (!installEvent) return;
+    installEvent.prompt();
+    await installEvent.userChoice;
+    setInstallEvent(null);
+  }
 
   return (
     <div className="shell">
@@ -50,6 +65,9 @@ function Layout({ user, onLogout, children }) {
           <span className={`offline-pill ${online ? "" : "is-off"}`}>
             {online ? "Online" : "Offline"}
           </span>
+          {installEvent && (
+            <button className="btn secondary" onClick={installApp}>Install app</button>
+          )}
           {user ? (
             <>
               <span className="user-chip">{user.full_name.split(" ")[0]} · {user.role}</span>
@@ -114,6 +132,7 @@ export default function App() {
         <Route path="/forgot" element={<ForgotPassword />} />
         <Route path="/reset" element={<ResetPassword />} />
         <Route path="/library" element={user ? <Library user={user} /> : <Navigate to="/login" />} />
+        <Route path="/read/:id" element={user ? <Reader /> : <Navigate to="/login" />} />
         <Route path="/upload" element={user ? <Upload /> : <Navigate to="/login" />} />
         <Route path="/offline" element={<Offline />} />
         <Route path="/sync" element={user ? <SyncStatus /> : <Navigate to="/login" />} />

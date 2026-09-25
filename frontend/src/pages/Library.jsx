@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { downloadResource, listResources } from "../api.js";
 import { CLASS_LEVELS, EXAM_YEARS, RESOURCE_TYPES, SUBJECTS, typeLabel } from "../catalog.js";
-import { saveOfflineResource } from "../offline/db.js";
+import { getOfflineResource, openBlob, saveOfflineResource } from "../offline/db.js";
 
 const emptyFilters = {
   q: "",
@@ -14,6 +15,7 @@ const emptyFilters = {
 };
 
 export default function Library({ user }) {
+  const navigate = useNavigate();
   const [items, setItems] = useState([]);
   const [filters, setFilters] = useState(emptyFilters);
   const [error, setError] = useState("");
@@ -45,11 +47,36 @@ export default function Library({ user }) {
 
   useEffect(() => { load(); }, []);
 
+  async function fileFor(item) {
+    const saved = await getOfflineResource(item.id);
+    if (saved?.blob) return saved;
+    const { blob } = await downloadResource(item.id);
+    await saveOfflineResource(item, blob);
+    return { ...item, blob };
+  }
+
   async function keepOffline(item) {
     try {
-      const { blob } = await downloadResource(item.id);
-      await saveOfflineResource(item, blob);
+      await fileFor(item);
       setMessage(`Saved "${item.title}" on this device.`);
+    } catch (err) {
+      setError(err.message);
+    }
+  }
+
+  async function readItem(item) {
+    try {
+      await fileFor(item);
+      navigate(`/read/${item.id}`);
+    } catch (err) {
+      setError(err.message);
+    }
+  }
+
+  async function downloadItem(item) {
+    try {
+      const row = await fileFor(item);
+      openBlob(row.blob, item.filename);
     } catch (err) {
       setError(err.message);
     }
@@ -72,7 +99,7 @@ export default function Library({ user }) {
           <span className="kicker">{user.school_name || "LearnVult school"}</span>
           <h1>Resource library</h1>
           <p className="meta">
-            Welcome, {user.full_name}. Students and teachers can search and filter notes or past papers by subject, class and year.
+            Welcome, {user.full_name}. Read a paper in the app, or download the file to the phone.
           </p>
         </div>
         <div className="stat">
@@ -154,7 +181,11 @@ export default function Library({ user }) {
                 {item.academic_year && <span className="tag">{item.academic_year}</span>}
               </div>
             </div>
-            <button className="btn secondary" onClick={() => keepOffline(item)}>Save offline</button>
+            <div className="row">
+              <button className="btn" onClick={() => readItem(item)}>Read</button>
+              <button className="btn secondary" onClick={() => downloadItem(item)}>Download</button>
+              <button className="btn ghost" onClick={() => keepOffline(item)}>Save offline</button>
+            </div>
           </article>
         ))}
       </div>
