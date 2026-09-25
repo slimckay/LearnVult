@@ -1,19 +1,17 @@
 const DB_NAME = "learnvult-offline";
 const STORE = "resources";
 const QUEUE = "uploadQueue";
-const VERSION = 2;
+const PROGRESS = "progress";
+const VERSION = 3;
 
 function openDb() {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open(DB_NAME, VERSION);
     request.onupgradeneeded = () => {
       const db = request.result;
-      if (!db.objectStoreNames.contains(STORE)) {
-        db.createObjectStore(STORE, { keyPath: "id" });
-      }
-      if (!db.objectStoreNames.contains(QUEUE)) {
-        db.createObjectStore(QUEUE, { keyPath: "id" });
-      }
+      if (!db.objectStoreNames.contains(STORE)) db.createObjectStore(STORE, { keyPath: "id" });
+      if (!db.objectStoreNames.contains(QUEUE)) db.createObjectStore(QUEUE, { keyPath: "id" });
+      if (!db.objectStoreNames.contains(PROGRESS)) db.createObjectStore(PROGRESS, { keyPath: "id" });
     };
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
@@ -46,11 +44,35 @@ export async function saveOfflineResource(resource, blob) {
   });
 }
 
+export async function getOfflineResource(id) {
+  const db = await openDb();
+  return new Promise((resolve, reject) => {
+    const request = db.transaction(STORE, "readonly").objectStore(STORE).get(Number(id) || id);
+    request.onsuccess = () => resolve(request.result || null);
+    request.onerror = () => reject(request.error);
+  });
+}
+
 export async function listOfflineResources() {
   const db = await openDb();
   return new Promise((resolve, reject) => {
     const request = db.transaction(STORE, "readonly").objectStore(STORE).getAll();
     request.onsuccess = () => resolve(request.result || []);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+export async function saveProgress(id, page) {
+  await withStore(PROGRESS, "readwrite", (store) =>
+    store.put({ id: Number(id) || id, page: Number(page) || 1, updatedAt: new Date().toISOString() })
+  );
+}
+
+export async function getProgress(id) {
+  const db = await openDb();
+  return new Promise((resolve, reject) => {
+    const request = db.transaction(PROGRESS, "readonly").objectStore(PROGRESS).get(Number(id) || id);
+    request.onsuccess = () => resolve(request.result || { page: 1 });
     request.onerror = () => reject(request.error);
   });
 }
