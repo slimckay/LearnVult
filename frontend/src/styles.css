@@ -195,6 +195,26 @@ input, select, textarea {
   margin: 0;
 }
 
+.reader-bar {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+.reader-bar h1 { font-size: 1.3rem; }
+.reader-frame {
+  width: 100%;
+  min-height: 72vh;
+  border: 0;
+  border-radius: 16px;
+  background: #fff;
+}
+.reader-image {
+  width: 100%;
+  border-radius: 16px;
+}
+
 .splash {
   position: fixed;
   inset: 0;
