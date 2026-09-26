@@ -10,6 +10,7 @@ import Offline from "./pages/Offline.jsx";
 import SyncStatus from "./pages/SyncStatus.jsx";
 import Admin from "./pages/Admin.jsx";
 import Reader from "./pages/Reader.jsx";
+import Feedback from "./pages/Feedback.jsx";
 import Splash from "./components/Splash.jsx";
 import { flushUploadQueue } from "./offline/syncQueue.js";
 
@@ -21,6 +22,7 @@ function readUser() {
 function Layout({ user, onLogout, children }) {
   const [online, setOnline] = useState(navigator.onLine);
   const [installEvent, setInstallEvent] = useState(null);
+  const [welcome, setWelcome] = useState(() => sessionStorage.getItem("lv_welcome") || "");
 
   useEffect(() => {
     const on = async () => {
@@ -51,6 +53,11 @@ function Layout({ user, onLogout, children }) {
     setInstallEvent(null);
   }
 
+  function dismissWelcome() {
+    sessionStorage.removeItem("lv_welcome");
+    setWelcome("");
+  }
+
   return (
     <div className="shell">
       <header className="topbar">
@@ -74,6 +81,7 @@ function Layout({ user, onLogout, children }) {
               <NavLink to="/library">Library</NavLink>
               <NavLink to="/offline">Offline</NavLink>
               <NavLink to="/sync">Sync</NavLink>
+              <NavLink to="/feedback">Feedback</NavLink>
               {(user.role === "teacher" || user.role === "admin") && (
                 <NavLink to="/upload">Upload</NavLink>
               )}
@@ -88,6 +96,12 @@ function Layout({ user, onLogout, children }) {
           )}
         </nav>
       </header>
+      {welcome && (
+        <div className="banner">
+          {welcome} {" "}
+          <button className="btn ghost" onClick={dismissWelcome}>Dismiss</button>
+        </div>
+      )}
       {children}
     </div>
   );
@@ -108,6 +122,14 @@ export default function App() {
   }, [showSplash]);
 
   function handleAuth(data) {
+    const first = data.user.full_name.split(" ")[0];
+    const seenKey = `lv_seen_${data.user.email}`;
+    const returning = Boolean(localStorage.getItem(seenKey));
+    localStorage.setItem(seenKey, "1");
+    sessionStorage.setItem(
+      "lv_welcome",
+      returning ? `Welcome back, ${first}. Good to see you again.` : `Welcome to LearnVult, ${first}.`,
+    );
     localStorage.setItem("lv_token", data.access_token);
     localStorage.setItem("lv_user", JSON.stringify(data.user));
     setUser(data.user);
@@ -117,6 +139,7 @@ export default function App() {
   function logout() {
     localStorage.removeItem("lv_token");
     localStorage.removeItem("lv_user");
+    sessionStorage.removeItem("lv_welcome");
     setUser(null);
     navigate("/login");
   }
@@ -136,6 +159,7 @@ export default function App() {
         <Route path="/upload" element={user ? <Upload /> : <Navigate to="/login" />} />
         <Route path="/offline" element={<Offline />} />
         <Route path="/sync" element={user ? <SyncStatus /> : <Navigate to="/login" />} />
+        <Route path="/feedback" element={user ? <Feedback user={user} /> : <Navigate to="/login" />} />
         <Route path="/admin" element={user && user.role === "admin" ? <Admin /> : <Navigate to="/login" />} />
       </Routes>
     </Layout>

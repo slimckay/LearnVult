@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import {
+  adminDeleteFeedback,
   adminDeleteResource,
+  adminFeedback,
   adminIssueResetCode,
   adminResources,
   adminSetPassword,
@@ -14,6 +16,7 @@ export default function Admin() {
   const [summary, setSummary] = useState(null);
   const [users, setUsers] = useState([]);
   const [resources, setResources] = useState([]);
+  const [notes, setNotes] = useState([]);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
@@ -21,14 +24,16 @@ export default function Admin() {
   async function load() {
     try {
       setError("");
-      const [stats, people, files] = await Promise.all([
+      const [stats, people, files, ideas] = await Promise.all([
         adminSummary(),
         adminUsers(),
         adminResources(),
+        adminFeedback(),
       ]);
       setSummary(stats);
       setUsers(people);
       setResources(files);
+      setNotes(ideas);
     } catch (err) {
       setError(err.message);
     }
@@ -61,11 +66,11 @@ export default function Admin() {
         <div className="hero-card">
           <span className="kicker">School control</span>
           <h1>Admin dashboard</h1>
-          <p className="meta">View accounts, verify teachers, reset passwords, and remove materials.</p>
+          <p className="meta">View accounts, verify teachers, read feedback, and remove materials.</p>
         </div>
         <div className="stat">
-          <span>Password reset requests</span>
-          <strong>{summary ? summary.password_resets : "—"}</strong>
+          <span>Feedback notes</span>
+          <strong>{summary ? summary.feedback : "—"}</strong>
         </div>
       </section>
 
@@ -78,9 +83,29 @@ export default function Admin() {
             <span className="tag">{summary.users} users</span>
             <span className="tag">{summary.teachers} teachers</span>
             <span className="tag">{summary.resources} resources</span>
+            <span className="tag">{summary.feedback || 0} feedback</span>
           </div>
         </div>
       )}
+
+      <div className="card" style={{ marginBottom: 16 }}>
+        <h2>Feedback</h2>
+        <p className="meta">Suggestions and problems sent from the Feedback page.</p>
+        {!notes.length && <p className="meta">No feedback yet.</p>}
+        {notes.map((note) => (
+          <article className="resource" key={note.id}>
+            <div>
+              <strong>{note.user_name}</strong>
+              <div className="meta">
+                <span className="tag">{note.category}</span>
+                {note.user_email} · {note.created_at ? new Date(note.created_at).toLocaleString() : ""}
+              </div>
+              <p>{note.message}</p>
+            </div>
+            <button className="btn ghost" disabled={busy} onClick={() => run(() => adminDeleteFeedback(note.id), () => "Feedback removed.")}>Remove</button>
+          </article>
+        ))}
+      </div>
 
       <div className="card" style={{ marginBottom: 16 }}>
         <h2>Teachers</h2>
