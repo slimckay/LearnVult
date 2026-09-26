@@ -23,9 +23,15 @@ function firstName(user) {
   return (user?.full_name || "friend").split(" ")[0];
 }
 
+function appIsInstalled() {
+  return window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
+}
+
 function Layout({ user, welcome, onDismissWelcome, onLogout, children }) {
   const [online, setOnline] = useState(navigator.onLine);
   const [installEvent, setInstallEvent] = useState(null);
+  const [installed, setInstalled] = useState(appIsInstalled);
+  const [showHelp, setShowHelp] = useState(false);
 
   useEffect(() => {
     const on = async () => {
@@ -39,21 +45,28 @@ function Layout({ user, welcome, onDismissWelcome, onLogout, children }) {
       event.preventDefault();
       setInstallEvent(event);
     };
+    const installedNow = () => setInstalled(true);
     window.addEventListener("online", on);
     window.addEventListener("offline", off);
     window.addEventListener("beforeinstallprompt", ready);
+    window.addEventListener("appinstalled", installedNow);
     return () => {
       window.removeEventListener("online", on);
       window.removeEventListener("offline", off);
       window.removeEventListener("beforeinstallprompt", ready);
+      window.removeEventListener("appinstalled", installedNow);
     };
   }, []);
 
   async function installApp() {
-    if (!installEvent) return;
-    installEvent.prompt();
-    await installEvent.userChoice;
-    setInstallEvent(null);
+    if (installEvent) {
+      installEvent.prompt();
+      const choice = await installEvent.userChoice;
+      setInstallEvent(null);
+      if (choice?.outcome === "accepted") setInstalled(true);
+      return;
+    }
+    setShowHelp((open) => !open);
   }
 
   return (
@@ -70,8 +83,8 @@ function Layout({ user, welcome, onDismissWelcome, onLogout, children }) {
           <span className={`offline-pill ${online ? "" : "is-off"}`}>
             {online ? "Online" : "Offline"}
           </span>
-          {installEvent && (
-            <button className="btn secondary" onClick={installApp}>Install app</button>
+          {!installed && (
+            <button className="btn secondary" type="button" onClick={installApp}>Install app</button>
           )}
           {user ? (
             <>
@@ -96,6 +109,17 @@ function Layout({ user, welcome, onDismissWelcome, onLogout, children }) {
         <div className="banner">
           <strong>{welcome}</strong>
           <button className="btn ghost" type="button" onClick={onDismissWelcome}>Dismiss</button>
+        </div>
+      )}
+      {showHelp && !installed && (
+        <div className="banner">
+          <strong>Add LearnVult to this phone</strong>
+          <p className="meta">
+            Android Chrome: tap the menu, then Install app or Add to Home screen.
+            iPhone: tap Share, then Add to Home Screen.
+            Computer Chrome: use the install icon in the address bar.
+          </p>
+          <button className="btn ghost" type="button" onClick={() => setShowHelp(false)}>Close</button>
         </div>
       )}
       {children}
