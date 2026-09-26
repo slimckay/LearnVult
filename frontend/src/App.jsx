@@ -19,10 +19,13 @@ function readUser() {
   return raw ? JSON.parse(raw) : null;
 }
 
-function Layout({ user, onLogout, children }) {
+function firstName(user) {
+  return (user?.full_name || "friend").split(" ")[0];
+}
+
+function Layout({ user, welcome, onDismissWelcome, onLogout, children }) {
   const [online, setOnline] = useState(navigator.onLine);
   const [installEvent, setInstallEvent] = useState(null);
-  const [welcome, setWelcome] = useState(() => sessionStorage.getItem("lv_welcome") || "");
 
   useEffect(() => {
     const on = async () => {
@@ -53,11 +56,6 @@ function Layout({ user, onLogout, children }) {
     setInstallEvent(null);
   }
 
-  function dismissWelcome() {
-    sessionStorage.removeItem("lv_welcome");
-    setWelcome("");
-  }
-
   return (
     <div className="shell">
       <header className="topbar">
@@ -77,7 +75,7 @@ function Layout({ user, onLogout, children }) {
           )}
           {user ? (
             <>
-              <span className="user-chip">{user.full_name.split(" ")[0]} · {user.role}</span>
+              <span className="user-chip">{firstName(user)} · {user.role}</span>
               <NavLink to="/library">Library</NavLink>
               <NavLink to="/offline">Offline</NavLink>
               <NavLink to="/sync">Sync</NavLink>
@@ -98,8 +96,8 @@ function Layout({ user, onLogout, children }) {
       </header>
       {welcome && (
         <div className="banner">
-          {welcome} {" "}
-          <button className="btn ghost" onClick={dismissWelcome}>Dismiss</button>
+          <strong>{welcome}</strong>
+          <button className="btn ghost" type="button" onClick={onDismissWelcome}>Dismiss</button>
         </div>
       )}
       {children}
@@ -109,6 +107,7 @@ function Layout({ user, onLogout, children }) {
 
 export default function App() {
   const [user, setUser] = useState(readUser);
+  const [welcome, setWelcome] = useState("");
   const [showSplash, setShowSplash] = useState(() => !sessionStorage.getItem("lv_splash"));
   const navigate = useNavigate();
 
@@ -122,14 +121,14 @@ export default function App() {
   }, [showSplash]);
 
   function handleAuth(data) {
-    const first = data.user.full_name.split(" ")[0];
+    const first = firstName(data.user);
     const seenKey = `lv_seen_${data.user.email}`;
     const returning = Boolean(localStorage.getItem(seenKey));
     localStorage.setItem(seenKey, "1");
-    sessionStorage.setItem(
-      "lv_welcome",
-      returning ? `Welcome back, ${first}. Good to see you again.` : `Welcome to LearnVult, ${first}.`,
-    );
+    const text = returning
+      ? `Welcome back, ${first}. Good to see you again.`
+      : `Welcome to LearnVult, ${first}.`;
+    setWelcome(text);
     localStorage.setItem("lv_token", data.access_token);
     localStorage.setItem("lv_user", JSON.stringify(data.user));
     setUser(data.user);
@@ -139,7 +138,7 @@ export default function App() {
   function logout() {
     localStorage.removeItem("lv_token");
     localStorage.removeItem("lv_user");
-    sessionStorage.removeItem("lv_welcome");
+    setWelcome("");
     setUser(null);
     navigate("/login");
   }
@@ -147,7 +146,7 @@ export default function App() {
   if (showSplash) return <Splash />;
 
   return (
-    <Layout user={user} onLogout={logout}>
+    <Layout user={user} welcome={welcome} onDismissWelcome={() => setWelcome("")} onLogout={logout}>
       <Routes>
         <Route path="/" element={<Navigate to={user ? "/library" : "/login"} />} />
         <Route path="/login" element={<Login onAuth={handleAuth} />} />
