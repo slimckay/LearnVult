@@ -32,6 +32,9 @@ export async function downloadResource(id) {
   if (!res.ok) throw new Error("Download failed");
   return { blob: await res.blob() };
 }
+export async function sendFeedback(payload) {
+  return parse(await fetch(`${API}/api/feedback`, { method: "POST", headers: { "Content-Type": "application/json", ...authHeader() }, body: JSON.stringify(payload) }));
+}
 export async function syncStatus() {
   return parse(await fetch(`${API}/api/sync/status`, { headers: { ...authHeader() } }));
 }
@@ -61,4 +64,10 @@ export async function adminResources() {
 }
 export async function adminDeleteResource(id) {
   return parse(await fetch(`${API}/api/admin/resources/${id}`, { method: "DELETE", headers: { ...authHeader() } }));
+}
+export async function adminFeedback() {
+  return parse(await fetch(`${API}/api/admin/feedback`, { headers: { ...authHeader() } }));
+}
+export async function adminDeleteFeedback(id) {
+  return parse(await fetch(`${API}/api/admin/feedback/${id}`, { method: "DELETE", headers: { ...authHeader() } }));
 }
