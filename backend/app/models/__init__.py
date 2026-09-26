@@ -1,6 +1,7 @@
+from app.models.feedback import Feedback
 from app.models.file_blob import FileBlob
 from app.models.resource import Resource, ResourceVersion
 from app.models.sync import SyncRecord
 from app.models.user import User
 
-__all__ = ["User", "Resource", "ResourceVersion", "SyncRecord", "FileBlob"]
+__all__ = ["User", "Resource", "ResourceVersion", "SyncRecord", "FileBlob", "Feedback"]
