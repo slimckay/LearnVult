@@ -79,10 +79,8 @@ function Layout({ user, welcome, onDismissWelcome, onLogout, children }) {
               <NavLink to="/library">Library</NavLink>
               <NavLink to="/offline">Offline</NavLink>
               <NavLink to="/sync">Sync</NavLink>
-              <NavLink to="/feedback">Feedback</NavLink>
-              {(user.role === "teacher" || user.role === "admin") && (
-                <NavLink to="/upload">Upload</NavLink>
-              )}
+              {user.role !== "admin" && <NavLink to="/feedback">Feedback</NavLink>}
+              {user.role === "teacher" && <NavLink to="/upload">Upload</NavLink>}
               {user.role === "admin" && <NavLink to="/admin">Admin</NavLink>}
               <button className="btn ghost" onClick={onLogout}>Log out</button>
             </>
@@ -148,17 +146,17 @@ export default function App() {
   return (
     <Layout user={user} welcome={welcome} onDismissWelcome={() => setWelcome("")} onLogout={logout}>
       <Routes>
-        <Route path="/" element={<Navigate to={user ? "/library" : "/login"} />} />
+        <Route path="/" element={<Navigate to={user ? (user.role === "admin" ? "/admin" : "/library") : "/login"} />} />
         <Route path="/login" element={<Login onAuth={handleAuth} />} />
         <Route path="/register" element={<Register onAuth={handleAuth} />} />
         <Route path="/forgot" element={<ForgotPassword />} />
         <Route path="/reset" element={<ResetPassword />} />
         <Route path="/library" element={user ? <Library user={user} /> : <Navigate to="/login" />} />
         <Route path="/read/:id" element={user ? <Reader /> : <Navigate to="/login" />} />
-        <Route path="/upload" element={user ? <Upload /> : <Navigate to="/login" />} />
+        <Route path="/upload" element={user && user.role === "teacher" ? <Upload /> : <Navigate to="/library" />} />
         <Route path="/offline" element={<Offline />} />
         <Route path="/sync" element={user ? <SyncStatus /> : <Navigate to="/login" />} />
-        <Route path="/feedback" element={user ? <Feedback user={user} /> : <Navigate to="/login" />} />
+        <Route path="/feedback" element={user && user.role !== "admin" ? <Feedback user={user} /> : <Navigate to={user ? "/admin" : "/login"} />} />
         <Route path="/admin" element={user && user.role === "admin" ? <Admin /> : <Navigate to="/login" />} />
       </Routes>
     </Layout>
