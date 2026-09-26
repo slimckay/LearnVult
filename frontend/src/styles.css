@@ -203,12 +203,17 @@ input, select, textarea {
   margin-bottom: 12px;
 }
 .reader-bar h1 { font-size: 1.3rem; }
-.reader-frame {
+.reader-wrap {
   width: 100%;
-  min-height: 72vh;
-  border: 0;
-  border-radius: 16px;
+  overflow: auto;
   background: #fff;
+  border-radius: 16px;
+  -webkit-overflow-scrolling: touch;
+}
+.reader-canvas {
+  display: block;
+  width: 100%;
+  height: auto;
 }
 .reader-image {
   width: 100%;
