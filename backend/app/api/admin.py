@@ -5,6 +5,7 @@ from app.api.auth import assign_reset_code
 from app.api.deps import require_admin
 from app.core.security import hash_password
 from app.database import get_db
+from app.models.feedback import Feedback
 from app.models.file_blob import FileBlob
 from app.models.resource import Resource, ResourceVersion
 from app.models.sync import SyncRecord
@@ -21,7 +22,8 @@ def summary(_: User = Depends(require_admin), db: Session = Depends(get_db)):
     pending = db.query(User).filter(User.role == "teacher", User.is_verified.is_(False)).count()
     resets = db.query(User).filter(User.reset_requested.is_(True)).count()
     resources = db.query(Resource).count()
-    return {"users": users, "teachers": teachers, "pending_teachers": pending, "password_resets": resets, "resources": resources}
+    notes = db.query(Feedback).count()
+    return {"users": users, "teachers": teachers, "pending_teachers": pending, "password_resets": resets, "resources": resources, "feedback": notes}
 
 @router.get("/users", response_model=list[UserOut])
 def list_users(_: User = Depends(require_admin), db: Session = Depends(get_db)):
@@ -116,3 +118,31 @@ def delete_resource(resource_id: int, _: User = Depends(require_admin), db: Sess
         if path.exists():
             path.unlink()
     return {"ok": True, "deleted": resource_id}
+
+@router.get("/feedback")
+def list_feedback(_: User = Depends(require_admin), db: Session = Depends(get_db)):
+    rows = db.query(Feedback).order_by(Feedback.created_at.desc()).all()
+    people = {user.id: user for user in db.query(User).all()}
+    out = []
+    for row in rows:
+        person = people.get(row.user_id)
+        out.append({
+            "id": row.id,
+            "category": row.category,
+            "message": row.message,
+            "created_at": row.created_at,
+            "user_id": row.user_id,
+            "user_name": person.full_name if person else "Unknown",
+            "user_email": person.email if person else None,
+            "user_role": person.role if person else None,
+        })
+    return out
+
+@router.delete("/feedback/{feedback_id}")
+def delete_feedback(feedback_id: int, _: User = Depends(require_admin), db: Session = Depends(get_db)):
+    row = db.query(Feedback).filter(Feedback.id == feedback_id).first()
+    if not row:
+        raise HTTPException(status_code=404, detail="Feedback not found")
+    db.delete(row)
+    db.commit()
+    return {"ok": True}

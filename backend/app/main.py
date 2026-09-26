@@ -1,18 +1,19 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import inspect, text
-from app.api import admin, auth, resources, sync
+from app.api import admin, auth, feedback, resources, sync
 from app.config import settings
 from app.core.security import hash_password
 from app.database import Base, SessionLocal, engine
-from app.models import FileBlob, User  # noqa: F401
+from app.models import Feedback, FileBlob, User  # noqa: F401
 
-app = FastAPI(title=settings.app_name, version="0.3.0")
+app = FastAPI(title=settings.app_name, version="0.3.1")
 app.add_middleware(CORSMiddleware, allow_origins=settings.origins, allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
 app.include_router(auth.router)
 app.include_router(resources.router)
 app.include_router(sync.router)
 app.include_router(admin.router)
+app.include_router(feedback.router)
 
 def ensure_schema() -> None:
     Base.metadata.create_all(bind=engine)
